@@ -67,7 +67,7 @@ func main() {
 
 		default:
 			readCtx, cancel := context.WithTimeout(ctx, *timeout)
-			batch, err := reader.ReadMessageBatch(readCtx)
+			batch, err := reader.ReadMessagesBatch(readCtx)
 			cancel()
 
 			if err != nil {
