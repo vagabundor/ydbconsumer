@@ -20,10 +20,16 @@ It connects over GRPCS, reads batches of messages, prints them, and commits thei
 
 ---
 
+## Build
+
+```bash
+go build -o ydbconsumer main.go
+```
+
 ## ⚙️ Usage
 
 ```bash
-go run main.go \
+./ydbconsumer \
   -endpoint "localhost:2135" \
   -database "/local" \
   -user "root" \
@@ -33,3 +39,4 @@ go run main.go \
   -consumer "debug-consumer" \
   -batch_size 100 \
   -read_timeout 5s
+```
