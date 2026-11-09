@@ -1,6 +1,6 @@
 module ydbconsumer
 
-go 1.24.2
+go 1.27
 
 require github.com/ydb-platform/ydb-go-sdk/v3 v3.108.0
 
