@@ -28,6 +28,8 @@ func main() {
 		consumerName = flag.String("consumer", "test-consumer", "Consumer name")
 		batchSize    = flag.Int("batch_size", 100, "Max messages per batch")
 		timeout      = flag.Duration("read_timeout", 5*time.Second, "Timeout for reading a batch")
+		startOffset  = flag.Int64("start_offset", -1, "Read messages starting from this offset "+
+			"(applied to every partition). Negative value means read from the consumer's committed offset")
 	)
 	flag.Parse()
 
@@ -47,16 +49,35 @@ func main() {
 	defer db.Close(ctx)
 
 	// Reader setup
+	readerOpts := []topicoptions.ReaderOption{
+		topicoptions.WithReaderBatchMaxCount(*batchSize),
+	}
+	if *startOffset >= 0 {
+		readerOpts = append(readerOpts, topicoptions.WithReaderGetPartitionStartOffset(
+			func(ctx context.Context, req topicoptions.GetPartitionStartOffsetRequest) (topicoptions.GetPartitionStartOffsetResponse, error) {
+				log.Printf("Starting partition %d of topic %q from offset %d", req.PartitionID, req.Topic, *startOffset)
+				var res topicoptions.GetPartitionStartOffsetResponse
+				res.StartFrom(*startOffset)
+				return res, nil
+			},
+		))
+	}
+
 	reader, err := db.Topic().StartReader(
 		*consumerName,
 		topicoptions.ReadTopic(*topicName),
-		topicoptions.WithReaderBatchMaxCount(*batchSize),
+		readerOpts...,
 	)
 	if err != nil {
 		log.Fatalf("failed to start topic reader: %v", err)
 	}
 	defer reader.Close(ctx)
 
+	if *startOffset >= 0 {
+		log.Printf("Reading from offset: %d (per partition)", *startOffset)
+	} else {
+		log.Printf("Reading from the consumer's committed offset")
+	}
 	log.Printf("Starting to read messages from topic: %s", *topicName)
 
 	for {
